@@ -1,33 +1,61 @@
 #!/bin/bash
 
-d=$(date +%Y%m%d%H%M%S)
-
-if [ "$1" == "--help" ]; then
-    echo "USAGE: $0 [PLATFORM]"
+function usage()
+{
+    echo "USAGE: $0 [--debug] [PLATFORM]"
     echo "PLATFORM is either linux/arm64 or linux/amd64 (default)"
     exit 1
+}
+
+if [ "$1" == "--help" ]; then
+    usage
+fi
+
+debug=0
+if [ "$1" == "--debug" ]; then
+    debug=1
+    shift
 fi
 
 if [ -z "$1"  ]; then
     platform="linux/amd64"
 else
     platform="$1"
+    shift
+fi
+
+if [ ! -z "$1" ]; then
+    usage
 fi
 
 platform_tag=$(echo $platform | sed 's|/|-|g')
+d=$(date +%Y%m%d%H%M%S)
 TAG_base="skogsbaer/compiler-construction-wasm_${platform_tag}"
 TAG1=${TAG_base}:latest
 TAG2=${TAG_base}:$d
 
 echo "Building for platform $platform"
-echo "Tags: $TAG1 and $TAG2 ..."
+debug_tag=skogsbaer/compiler-construction_debug
+if [ $debug == 1 ]; then
+    opts="--progress=plain --load --target base -t $debug_tag"
+    echo "Debug tag: $debug_tag"
+else
+    opts="--tag $TAG1 --tag $TAG2"
+    echo "Tags: $TAG1 and $TAG2 ..."
+fi
 
 cd $(dirname $0)/..
-docker build --platform "$platform" --tag $TAG1 --tag $TAG2 --file docker/Dockerfile . || exit 1
+docker buildx build --platform "$platform" $opts --file docker/Dockerfile . || exit 1
 
-echo "Building done, now pushing ..."
+if [ $debug == 1 ]; then
+    echo "Building done"
+    echo "Not pushing because we are in debug mode"
+    echo "Command for running a shell inside the debug image: docker run --rm -it $debug_tag bash"
+else
+    echo "Building done, now pushing ..."
 
-docker push $TAG1
-docker push $TAG2
+    docker push $TAG1
+    docker push $TAG2
 
-echo "All done, tags: $TAG1 and $TAG2 ..."
+    echo "All done, tags: $TAG1 and $TAG2 ..."
+fi

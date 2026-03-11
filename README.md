@@ -96,14 +96,56 @@ Adding new tests is simple:
 
 # Installation
 
-See below for a list of requirements.
-You can either install the requirements on your local system (alternative 2) or
-you can use a prebuilt docker image (alternative 1).
-Installation via docker is simpler that a local installation. Especially under
-Windows, using docker is the
-preferred way to get everything running.
+The simplest way to use the toolchain required for developing the compiler is via docker
+and the [DevContainer](https://code.visualstudio.com/docs/devcontainers/containers) feature
+of visual studio code. Alternatively, you can install the toolchain locally on your
+system. Both options are described next.
 
-## Requirements
+## DevContainer in visual studio code
+
+With this approach, everything (including visual studio code) is running
+inside a docker image. There are different docker images for the x86
+and the ARM architecture.
+
+For the initial setup, proceed like this:
+
+* Create a checkout of this repository on your local machine.
+* Open the toplevel directory of the checkout in visual studio code ("open folder").
+* Usually, visual studio code will prompt you
+  "Folder contains a Dev Container configuration file". Choose
+  "Reopen in Container"
+  * Alternatively, you can click on "Dev Container" icon in the very lower left
+    corner and choose "Reopen in Container".
+  * When opening the DevContainer for the first time (or after the docker image)
+    has changed, this takes some time because the docker image needs to be
+    downloaded.
+  * Per default, the docker image used by the DevContainer is configured for an
+    x86 architecture (Windows, Linux, or older Mac OSX system). If you
+    work with a ARM-based Macs, you have to edit the file
+    `.devcontainer/devcontainer.json`. The docker image to used is specified
+    in a comment there.
+* The terminal in visual studio code also runs using the docker image.
+* If you want to use the docker image on the commandline, use this command,
+  (replacing `/PATH_TO_YOUR_CHECKOUT_OF_THIS_REPO` with the absolute path to the clone
+  of the repository):
+
+```
+$ docker run -v /PATH_TO_YOUR_CHECKOUT_OF_THIS_REPO:/cc -ti skogsbaer/compiler-construction-wasm_linux-amd64:latest bash
+# use the image for ARM if necessary
+```
+
+### Keeping the image up-to-date
+
+The docker image has to be in sync with some parts of this repository, most notably
+with `requirements.txt` (for python dependencies) and
+with `wasm-support/native-lib/env.c` (for native code used by wasm). The script
+`docker/check-image-uptodate` can be used to check if everything is in sync.
+Please contact the maintainer of this repository if a new docker image is needed.
+
+
+## Manual installation
+
+### Requirements
 
 * Python version 3.12.x (a later version should also work, 3.11 or earlier does **not** work)
 * iwasm virtual from the [wasm-micro-runtime](https://github.com/bytecodealliance/wasm-micro-runtime) package,
@@ -118,90 +160,11 @@ preferred way to get everything running.
 * [SPIM](https://spimsimulator.sourceforge.net/), a MIPS32 simulator (version 8 or 9)
 * Optional, for visualizing graph trees: graphviz
 
-## Alternative 1: Use docker
-
-With this alternative, you edit the code of the compiler on your host system,
-but running the compiler, executing the tests, type checking your code
-is done inside a prebuilt docker image.
-
-You need to perform the following steps:
-
-* Install docker (Under Windows, use docker under WSL. See below)
-* Start a shell using the provided docker image
-  (you have to be in the toplevel directory of this project):
-
-```
-$ docker run -v .:/cc -ti skogsbaer/compiler-construction-wasm_linux-amd64:latest bash
-```
-
-In some cases, you might need to specify the current directory not via `.`
-but as an absolute path. In this case, the command is:
-
-```
-$ docker run -v /PATH_TO_YOUR_CHECKOUT_OF_THIS_REPO:/cc -ti skogsbaer/compiler-construction-wasm_linux-amd64:latest bash
-```
-
-(Replace
-`/PATH_TO_YOUR_CHECKOUT_OF_THIS_REPO` with the absolute path to the clone
-of this repository):
-
-
-Inside the shell, you can now run all tests (`scripts/run-tests`) or type check your code
-(`scripts/tycheck`).
-
-There are different docker images for x86 and arm:
-
-* `skogsbaer/compiler-construction-wasm_linux-amd64:latest`
-* `skogsbaer/compiler-construction-wasm_linux-arm64:latest`
-
-### Keeping the image up-to-date
-
-The docker image has to be in sync with some parts of this repository, most notably
-with `requirements.txt` (for python dependencies) and
-with `wasm-support/native-lib/env.c` (for native code used by wasm). The script
-`docker/check-image-uptodate` can be used to check if everything is in sync.
-Please contact the maintainer of this repository if a new docker image is needed.
-
-### Tips for Windows user
-
-On Windows, you might run into line ending problems. For example, if you
-perform a git checkout in Windows, line endings are transformed into
-`\r\n`, but the commands inside the docker container expects unix-style
-line endings `\n`. Also, there are sometimes problems with Docker Desktop
-on Windows.
-
-To solve these problems, follow these steps:
-
-* Install the Windows Subsystem for Linux (WSL).
-* Install docker inside the WSL and use docker inside WSL. Do not use Docker Desktop.
-* Install git under WSL and always use git under WSL.
-
-The only downside of this approach is that you cannot use the git tools
-provide by Visual Studio code, you always have to use the commandline
-under WSL.
-
-### Using Visual Studio Code with Docker
-
-To make proper use of the Python extension for Visual Studio Code, you need to install
-the python toolchain also outside of docker.
-First, make sure you have Python 3.12 (a later version should also work). Then execute
-the following commands from the toplevel directory of this project:
-
-```
-$ python -m venv .venv
-$ source .venv/bin/activate
-$ pip install -r requirements.txt
-```
-
-## Alternative 2: Install everything by hand
-
 The following installation instruction should work under Mac OSX and Linux. Make sure
 you install all tools mentioned in the list above. Below, you find more detailed instructions
 for some but not all required tools.
-
 I did not test under Windows, feel free to create a pull request to
-add instructions for Windows. However, I recommend using the installation
-via docker under Windows.
+add instructions for Windows.
 
 ### Install `wasm-micro-runtime` and `wabt`
 
@@ -254,7 +217,7 @@ $ cd wasm-support
 $ make native WAMR_ROOT_DIR=/PATH_TO_WARM_CHECKOUT
 ```
 
-## Install pyright
+### Install pyright
 
 You need to install nodejs and npm first. Then, from the toplevel
 directory of this project, execute:
@@ -263,7 +226,7 @@ directory of this project, execute:
 $ npm install
 ```
 
-## Misc
+### Misc
 
 The tests of this project rely on the `timeout` command. Under Mac,
 this is available via `brew install coreutils`.

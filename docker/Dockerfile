@@ -1,8 +1,7 @@
 # syntax=docker/dockerfile:1
 # Note: the context directory for this dockerfile is ..
 
-# see https://github.com/arnaudblois/python-ubuntu-image
-FROM ursamajorlab/jammy-python:3.13
+FROM ubuntu:25.10 AS base
 
 # Setup timezone
 ENV TZ=Europe/Berlin
@@ -27,9 +26,8 @@ RUN apt-get clean && apt-get update && apt-get install -y \
   curl \
   build-essential \
   cmake \
-  g++-multilib \
-  libgcc-9-dev \
-  lib32gcc-9-dev \
+  python-is-python3 \
+  python3-pip \
   ccache
 
 RUN apt-get install -y \
@@ -58,16 +56,16 @@ RUN mkdir -p /cc-support/wasm-support
 COPY ./requirements.txt /cc-support/requirements.txt
 COPY ./package.json /cc-support/package.json
 
-RUN python -m ensurepip --upgrade --root /usr/local --verbose
-RUN ln -s /usr/local/bin/pip3.13 /usr/local/bin/pip
-RUN ln -s /usr/local/bin/pip3.13 /usr/local/bin/pip3
-
-RUN pip install -r /cc-support/requirements.txt
+RUN pip install  --break-system-packages -r /cc-support/requirements.txt
 RUN cd /cc-support && npm install && \
   ln -s /cc-support/node_modules/.bin/pyright /usr/local/bin/pyright
 
 COPY ./wasm-support /cc-support/wasm-support
 RUN cd /cc-support/wasm-support && rm -rf native-lib/build
+
+# Have this line at the point where you want to debug the intermediate image
+# Invoke ./docker-build with the --debug flag
+FROM base AS final
 RUN cd /cc-support/wasm-support && make native WAMR_ROOT_DIR=/cc-support/wasm-micro-runtime
 
 RUN mkdir /cc

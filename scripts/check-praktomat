@@ -6,22 +6,8 @@
 # - The directory /external contains a checkout of the compiler-construction-student repo. We
 #   take the tests from this directory.
 #
-# Plan
-# - find directory that contains the src directory.
-# - run /external/scripts/check on the files in src, adjusting pytest.ini to execute
-#   the right tests.
-#
-# The simpliest way to make this plan happen is the following:
-# - create a new temporary directory D
-# - copy /external/* to this directory
-# - remove D/src
-# - copy src from student submission to D
-# - generate D/student/pytest.ini
-# - execute D/scripts/check
-#
-# Potential sanity check: compare student files with files in /external and output
-# a warning if difference is found for some file not inside src. We could use 'diff -r'
-# for this.
+# Local execution:
+# $ scripts/check-praktomat --student-dir ../compiler-construction-student --test-dir . --debug TEST
 
 import shell
 import argparse
@@ -114,7 +100,7 @@ def parseArgs():
     parser.add_argument('--test-dir', metavar='DIR',
                         help='test directory (for testing, default is /external)')
     parser.add_argument('exercise', metavar='EX', choices=VALID_EXERCISES,
-                        help='specify exercise to check')
+                        help='specify exercise to check, one of ' + str(VALID_EXERCISES))
     (args, _) = parser.parse_known_args()
     return args
 

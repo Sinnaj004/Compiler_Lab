@@ -41,7 +41,7 @@ static void print_i64_wrapper(wasm_exec_env_t exec_env, int64_t x)
 
 static void print_f32_wrapper(wasm_exec_env_t exec_env, float x)
 {
-    printf("%f\n", x);
+    printf("%f\n", (double)x);
 }
 
 static void print_f64_wrapper(wasm_exec_env_t exec_env, double x)
