@@ -1,0 +1,10 @@
+WHITESPACE: (" "|/\t/|/\r/|/\n/)+
+STRING: /\"[a-zA-Z0-9]*\"/
+INT: /0-9+/
+LBRACE: "{"
+RBRACE: "}"
+COLON: ":"
+COMMA: ","
+
+%ignore WHITESPACE
+start: STRING INT LBRACE RBRACE COLON COMMA
